@@ -1,0 +1,245 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root,
+[data-lighting='day'] {
+  --c-canvas: 243 236 224;
+  --c-panel: 231 222 201;
+  --c-card: 255 253 248;
+  --c-wood: 205 168 124;
+  --c-wood-dark: 150 107 67;
+  --c-ink: 43 34 27;
+  --c-ink-sec: 88 73 61;
+  --c-ink-muted: 104 88 75;
+  --c-accent: 46 90 68;
+  --c-accent-ink: 255 253 248;
+  --c-bp: 27 70 116;
+  --c-bp-panel: 20 53 90;
+  --c-bp-ink: 244 248 255;
+  --c-bp-sec: 194 218 245;
+  --c-stamp: 184 50 38;
+  --c-paper: 250 245 235;
+  --c-paper-sub: 240 231 214;
+  --c-cork: 228 209 178;
+  --c-brass: 116 76 34;
+}
+
+[data-lighting='night'] {
+  --c-canvas: 30 25 21;
+  --c-panel: 43 35 29;
+  --c-card: 52 43 36;
+  --c-wood: 122 88 56;
+  --c-wood-dark: 92 65 41;
+  --c-ink: 247 239 226;
+  --c-ink-sec: 215 199 179;
+  --c-ink-muted: 186 169 149;
+  --c-accent: 242 196 100;
+  --c-accent-ink: 30 25 21;
+  --c-bp: 22 57 94;
+  --c-bp-panel: 16 43 73;
+  --c-bp-ink: 244 248 255;
+  --c-bp-sec: 188 214 242;
+  --c-stamp: 255 132 120;
+  --c-paper: 39 32 27;
+  --c-paper-sub: 48 39 33;
+  --c-cork: 36 29 24;
+  --c-brass: 242 196 100;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background-color: rgb(var(--c-canvas));
+  color: rgb(var(--c-ink));
+  font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, sans-serif;
+  word-break: keep-all;
+  overflow-x: clip;
+  transition: background-color 320ms ease, color 320ms ease;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+*:focus-visible {
+  outline: 2px solid rgb(var(--c-accent));
+  outline-offset: 2px;
+}
+
+.bp-paper-grid *:focus-visible,
+[data-dark-surface='true'] *:focus-visible {
+  outline: 2px solid #f2c464;
+  outline-offset: 2px;
+}
+
+::selection {
+  background-color: rgb(var(--c-accent) / 0.24);
+  color: rgb(var(--c-ink));
+}
+
+.bp-paper-grid ::selection {
+  background-color: rgba(242, 196, 100, 0.34);
+  color: #ffffff;
+}
+
+input,
+textarea {
+  caret-color: rgb(var(--c-accent));
+}
+
+.bp-paper-grid input {
+  caret-color: #f2c464;
+}
+
+/* Blueprint paper subtle fine engineering grid */
+.bp-paper-grid {
+  background-color: rgb(var(--c-bp));
+  background-image:
+    linear-gradient(to right, rgba(244, 248, 255, 0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(244, 248, 255, 0.06) 1px, transparent 1px),
+    linear-gradient(to right, rgba(244, 248, 255, 0.12) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(244, 248, 255, 0.12) 1px, transparent 1px);
+  background-size: 24px 24px, 24px 24px, 120px 120px, 120px 120px;
+}
+
+.studio-shadow {
+  box-shadow: 0 18px 42px rgba(28, 20, 14, 0.22);
+}
+
+/* Blueprint scroll-unroll transition */
+.bp-sheet-drawer {
+  transition:
+    transform 460ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 320ms ease;
+}
+
+/* Custom thin code scrollbars */
+.bp-code-scroll::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.bp-code-scroll::-webkit-scrollbar-track {
+  background: rgba(12, 28, 48, 0.45);
+}
+
+.bp-code-scroll::-webkit-scrollbar-thumb {
+  background: rgba(242, 196, 100, 0.5);
+  border-radius: 999px;
+}
+
+.paper-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(var(--c-ink) / 0.32) rgb(var(--c-ink) / 0.08);
+}
+
+.paper-scroll::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.paper-scroll::-webkit-scrollbar-track {
+  background: rgb(var(--c-ink) / 0.08);
+}
+
+.paper-scroll::-webkit-scrollbar-thumb {
+  background: rgb(var(--c-ink) / 0.32);
+  border-radius: 999px;
+}
+
+/* Tactile Architectural APPROVED Rubber-Stamp Choreography */
+@keyframes eden-stamp-slam {
+  0% {
+    opacity: 0;
+    transform: translate3d(14px, -50px, 0) scale(3.15) rotate(-26deg);
+    filter: blur(2.5px);
+  }
+  26% {
+    opacity: 1;
+    transform: translate3d(0, 3px, 0) scale(0.84) rotate(-10deg);
+    filter: blur(0);
+  }
+  48% {
+    opacity: 1;
+    transform: translate3d(0, -1.5px, 0) scale(1.08) rotate(-13deg);
+  }
+  72% {
+    opacity: 1;
+    transform: translate3d(0, 0.5px, 0) scale(0.98) rotate(-11.6deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1) rotate(-12deg);
+  }
+}
+
+@keyframes eden-stamp-shockwave {
+  0% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  22% {
+    opacity: 0.92;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.62);
+  }
+}
+
+@keyframes eden-sheet-thud-a {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  42% {
+    transform: translate3d(0, 3px, 0) scale(0.994);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes eden-sheet-thud-b {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  42% {
+    transform: translate3d(0, 3px, 0) scale(0.994);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+.eden-stamp-slam {
+  animation: eden-stamp-slam 580ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  transform-origin: center center;
+  will-change: transform, opacity;
+}
+
+.eden-stamp-ring {
+  animation: eden-stamp-shockwave 520ms cubic-bezier(0.16, 1, 0.3, 1) 140ms both;
+  transform-origin: center center;
+}
+
+.eden-sheet-thud-a {
+  animation: eden-sheet-thud-a 260ms ease-out 135ms;
+}
+
+.eden-sheet-thud-b {
+  animation: eden-sheet-thud-b 260ms ease-out 135ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

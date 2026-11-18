@@ -16,6 +16,8 @@ interface BlueprintPromptSheetProps {
   open: boolean;
   selectedProjectIdx: number;
   cabinetZoomed: boolean;
+  mobileCollapsed?: boolean;
+  onToggleMobileCollapsed?: () => void;
   onSelectProjectIdx: (idx: number) => void;
   onSetCabinetZoomed: (zoomed: boolean) => void;
   onPrev: () => void;
@@ -60,6 +62,8 @@ export function BlueprintPromptSheet({
   open,
   selectedProjectIdx,
   cabinetZoomed,
+  mobileCollapsed = false,
+  onToggleMobileCollapsed,
   onSelectProjectIdx,
   onSetCabinetZoomed,
   onPrev,
@@ -133,15 +137,17 @@ export function BlueprintPromptSheet({
   const visibleSheet = Boolean(open && stop && stop.id !== 'overview' && stop.id !== 'board');
   const isCompactBlueprint = !isBook && !isPortfolio;
 
-  const mobileMaxHClass = isPortfolio
+  const mobileMaxHClass = mobileCollapsed
+    ? 'max-h-[68px] md:max-h-[calc(100dvh-172px)]'
+    : isPortfolio
     ? mobileCabinetGridOpen
-      ? 'max-h-[68vh]'
-      : 'max-h-[55vh]'
+      ? 'max-h-[68dvh]'
+      : 'max-h-[54dvh]'
     : isBook
-    ? 'max-h-[55vh]'
+    ? 'max-h-[54dvh]'
     : mobileVarsOpen
-    ? 'max-h-[64vh]'
-    : 'max-h-[48vh]';
+    ? 'max-h-[66dvh]'
+    : 'max-h-[52dvh]';
 
   return (
     <aside
@@ -149,8 +155,9 @@ export function BlueprintPromptSheet({
       aria-hidden={!visibleSheet}
       inert={!visibleSheet || undefined}
       className={`bp-sheet-drawer fixed z-30 flex flex-col
-        inset-x-2 bottom-2 ${mobileMaxHClass}
-        md:inset-x-auto md:bottom-auto md:right-3.5 md:top-[60px] md:max-h-[calc(100vh-172px)]
+        inset-x-2 bottom-[max(0.5rem,env(safe-area-inset-bottom))] ${mobileMaxHClass}
+        md:inset-x-auto md:bottom-auto md:right-3.5 md:top-[60px] md:max-h-[calc(100dvh-172px)]
+        [@media(max-height:500px)]:top-[54px] [@media(max-height:500px)]:max-h-[calc(100dvh-62px)]
         ${isCompactBlueprint ? 'md:w-[min(45vw,560px)]' : 'md:w-[min(46vw,580px)]'}
         ${
           visibleSheet
@@ -160,6 +167,55 @@ export function BlueprintPromptSheet({
     >
       {visibleSheet && stop && (
         <div className="flex min-h-0 flex-1 flex-col rounded-[10px] border-[1.5px] border-ink/60 bg-wood p-1.5 sm:p-2 studio-shadow">
+          {/* Mobile Sheet Expand/Collapse Bar for Unobstructed 3D Viewing */}
+          {onToggleMobileCollapsed && (
+            <div className="mb-1 flex items-center justify-between gap-2 rounded-md bg-card/95 px-2.5 py-0.5 md:hidden">
+              {mobileCollapsed ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={onToggleMobileCollapsed}
+                    className="inline-flex min-h-[40px] min-w-0 flex-1 items-center gap-1.5 text-left font-sans text-xs font-extrabold text-ink"
+                  >
+                    <span className="rounded bg-accent px-1.5 py-0.5 font-mono text-[10px] tabular-nums text-accent-ink">
+                      {stop.indexLabel}
+                    </span>
+                    <span className="truncate">{stop.shortTitle}</span>
+                  </button>
+                  <div className="flex shrink-0 items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={onToggleMobileCollapsed}
+                      className="inline-flex min-h-[40px] items-center rounded border border-ink/40 bg-panel px-2.5 font-mono text-[11px] font-bold text-ink"
+                    >
+                      시트 펼치기 ▴
+                    </button>
+                    <button
+                      type="button"
+                      onClick={onCloseToOverview}
+                      className="inline-flex min-h-[40px] items-center rounded border border-ink/40 bg-panel px-2.5 font-mono text-[11px] font-bold text-ink-sec"
+                    >
+                      닫기
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={onToggleMobileCollapsed}
+                  className="flex min-h-[26px] w-full items-center justify-between font-mono text-[10.5px] font-bold text-ink-sec"
+                >
+                  <span className="flex items-center gap-1.5">
+                    <span aria-hidden="true" className="h-1 w-5 rounded-full bg-ink/35" />
+                    <span>{stop.indexLabel} · {stop.shortTitle}</span>
+                  </span>
+                  <span className="text-accent">3D 크게 보기 ▾</span>
+                </button>
+              )}
+            </div>
+          )}
+
+          <div className={`${mobileCollapsed ? 'hidden md:flex' : 'flex'} min-h-0 flex-1 flex-col`}>
           {isPortfolio ? (
             <PortfolioCabinetSheet
               selectedProjectIdx={selectedProjectIdx}
@@ -181,10 +237,10 @@ export function BlueprintPromptSheet({
                 data-dark-surface="true"
                 className="flex items-center justify-between gap-2 border-b border-ink/20 bg-[#2E5A44] px-3 py-1 font-mono text-[11px] text-[#FFFDF8] sm:py-1.5"
               >
-                <div className="flex min-w-0 items-center gap-1.5 whitespace-nowrap tabular-nums">
-                  <span className="font-bold text-[#F2C464]">STOP {stop.indexLabel}</span>
-                  <span>/ 09</span>
-                  <span className="hidden opacity-90 sm:inline">· TEXTBOOK &amp; LECTURE</span>
+                <div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden whitespace-nowrap tabular-nums">
+                  <span className="shrink-0 font-bold text-[#F2C464]">STOP {stop.indexLabel}</span>
+                  <span className="shrink-0">/ 09</span>
+                  <span className="hidden truncate opacity-90 lg:inline">· TEXTBOOK &amp; LECTURE</span>
                 </div>
                 <div className="flex shrink-0 items-center gap-2 sm:gap-1.5">
                   <button
@@ -226,7 +282,7 @@ export function BlueprintPromptSheet({
 
               {/* Interactive Chapter Tabs */}
               <div className="border-b border-ink/15 bg-paper-sub/80 px-3 py-1.5 sm:py-2">
-                <div className="flex flex-wrap gap-2 sm:gap-1.5">
+                <div className="no-scrollbar flex flex-nowrap gap-1.5 overflow-x-auto sm:flex-wrap">
                   {stop.chapters.map((ch, idx) => (
                     <button
                       key={ch.number}
@@ -249,7 +305,7 @@ export function BlueprintPromptSheet({
               {activeChapter && (
                 <div
                   data-lenis-prevent
-                  className="paper-scroll min-h-0 flex-1 space-y-2.5 overflow-y-auto px-3.5 py-2.5 sm:px-4 sm:py-3"
+                  className="paper-scroll min-h-0 flex-1 space-y-2.5 overflow-y-auto overscroll-contain px-3.5 py-2.5 sm:px-4 sm:py-3"
                 >
                   <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-ink/15 pb-1.5">
                     <h3 className="font-sans text-sm font-bold text-ink sm:text-base">
@@ -304,7 +360,7 @@ export function BlueprintPromptSheet({
             <div
               className={`bp-paper-grid relative flex min-h-0 flex-1 flex-col overflow-hidden border-[1.5px] border-[#112A46] text-bp-ink ${getSheetThudClass(stampSeq)}`}
             >
-              <header className="shrink-0 border-b border-white/25 bg-bp-panel/90 px-4 py-2.5 sm:py-3">
+              <header className="shrink-0 border-b border-white/25 bg-bp-panel/90 px-3 py-1.5 sm:px-4 sm:py-2.5">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 font-mono text-[11px]">
                     <span className="font-bold tracking-wider tabular-nums text-[#F2C464]">
@@ -314,38 +370,40 @@ export function BlueprintPromptSheet({
                       SAMPLE
                     </span>
                   </div>
-                  <div className="flex shrink-0 items-center gap-2 font-mono text-[11px] sm:gap-1.5">
+                  <div className="flex shrink-0 items-center gap-1.5 font-mono text-[11px]">
                     <button
                       type="button"
                       onClick={onPrev}
-                      className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded border border-white/45 bg-bp/80 px-2.5 py-0.5 text-bp-ink hover:border-[#F2C464] hover:text-white sm:min-h-[28px] sm:min-w-0 sm:px-2"
+                      className="inline-flex min-h-[38px] min-w-[40px] items-center justify-center rounded border border-white/45 bg-bp/80 px-2 py-0.5 text-bp-ink hover:border-[#F2C464] hover:text-white sm:min-h-[28px] sm:min-w-0 sm:px-2"
                     >
                       이전
                     </button>
                     <button
                       type="button"
                       onClick={onNext}
-                      className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded border border-white/45 bg-bp/80 px-2.5 py-0.5 text-bp-ink hover:border-[#F2C464] hover:text-white sm:min-h-[28px] sm:min-w-0 sm:px-2"
+                      className="inline-flex min-h-[38px] min-w-[40px] items-center justify-center rounded border border-white/45 bg-bp/80 px-2 py-0.5 text-bp-ink hover:border-[#F2C464] hover:text-white sm:min-h-[28px] sm:min-w-0 sm:px-2"
                     >
                       다음
                     </button>
                     <button
                       type="button"
                       onClick={onCloseToOverview}
-                      className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded border border-white/45 bg-bp/80 px-2.5 py-0.5 text-bp-ink hover:border-[#F2C464] hover:text-white sm:min-h-[28px] sm:min-w-0 sm:px-2"
+                      className="inline-flex min-h-[38px] min-w-[40px] items-center justify-center rounded border border-white/45 bg-bp/80 px-2 py-0.5 text-bp-ink hover:border-[#F2C464] hover:text-white sm:min-h-[28px] sm:min-w-0 sm:px-2"
                     >
                       닫기
                     </button>
                   </div>
                 </div>
-                <h2 className="mt-1.5 font-sans text-base font-bold leading-snug text-white sm:text-[17px]">
+                <h2 className="mt-1 font-sans text-[15px] font-bold leading-snug text-white sm:mt-1.5 sm:text-[17px]">
                   {stop.title}
                 </h2>
-                <p className="mt-0.5 text-xs text-bp-sec">{stop.summary}</p>
+                <p className="mt-0.5 line-clamp-1 text-[11.5px] text-bp-sec sm:line-clamp-none sm:text-xs">
+                  {stop.summary}
+                </p>
               </header>
 
               {stop.variables.length > 0 && (
-                <div className="shrink-0 border-b border-white/20 bg-bp-panel/45 px-3.5 py-2">
+                <div className="shrink-0 border-b border-white/20 bg-bp-panel/45 px-3 py-1.5 sm:px-3.5 sm:py-2">
                   <div className="flex items-center justify-between gap-2 sm:hidden">
                     <span className="font-mono text-[11px] text-bp-sec">
                       조건값 <span className="tabular-nums">{stop.variables.length}</span>개
@@ -355,7 +413,7 @@ export function BlueprintPromptSheet({
                         <button
                           type="button"
                           onClick={handleResetVars}
-                          className="inline-flex min-h-[44px] shrink-0 items-center rounded border border-white/45 bg-bp px-2.5 py-0.5 font-mono text-[11px] font-semibold text-bp-sec hover:border-[#F2C464] hover:text-white"
+                          className="inline-flex min-h-[36px] shrink-0 items-center rounded border border-white/45 bg-bp px-2.5 py-0.5 font-mono text-[11px] font-semibold text-bp-sec hover:border-[#F2C464] hover:text-white"
                         >
                           초기화
                         </button>
@@ -364,7 +422,7 @@ export function BlueprintPromptSheet({
                         type="button"
                         onClick={() => setMobileVarsOpen((v) => !v)}
                         aria-expanded={mobileVarsOpen}
-                        className="inline-flex min-h-[44px] shrink-0 items-center rounded border border-white/45 bg-bp px-3 py-0.5 font-mono text-[11px] font-bold text-[#F2C464]"
+                        className="inline-flex min-h-[36px] shrink-0 items-center rounded border border-white/45 bg-bp px-2.5 py-0.5 font-mono text-[11px] font-bold text-[#F2C464]"
                       >
                         {mobileVarsOpen ? '조건값 닫기 ▴' : '조건값 편집 ▾'}
                       </button>
@@ -403,7 +461,7 @@ export function BlueprintPromptSheet({
                             });
                           }}
                           placeholder={v.placeholder}
-                          className="min-w-0 flex-1 rounded-sm bg-transparent font-mono text-xs font-semibold text-white placeholder:text-bp-sec/80 focus:outline-none sm:mt-0.5 sm:w-full"
+                          className="min-w-0 flex-1 rounded-sm bg-transparent font-mono text-base font-semibold text-white placeholder:text-bp-sec/80 focus:outline-none sm:mt-0.5 sm:w-full sm:text-xs"
                         />
                       </label>
                     ))}
@@ -411,7 +469,7 @@ export function BlueprintPromptSheet({
                 </div>
               )}
 
-              <div data-lenis-prevent className="bp-code-scroll min-h-0 flex-1 overflow-y-auto px-4 py-3.5">
+              <div data-lenis-prevent className="bp-code-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain px-3.5 py-2.5 sm:px-4 sm:py-3.5">
                 <pre className="whitespace-pre-wrap font-mono text-xs leading-relaxed text-[#F4F8FF] sm:text-[12.5px]">
                   {renderResolvedNodes(stop.template, stop.variables, currentValues)}
                 </pre>
@@ -420,10 +478,10 @@ export function BlueprintPromptSheet({
               <ApprovedStamp
                 seq={stampSeq}
                 variant="blueprint"
-                className="bottom-[62px] right-4 z-20 sm:bottom-[54px] sm:right-5"
+                className="bottom-[56px] right-4 z-20 sm:bottom-[54px] sm:right-5"
               />
 
-              <div className="flex shrink-0 items-center justify-between gap-2 border-t border-white/25 bg-bp-panel/85 px-4 py-2">
+              <div className="flex shrink-0 items-center justify-between gap-2 border-t border-white/25 bg-bp-panel/85 px-3.5 py-1.5 sm:px-4 sm:py-2">
                 <div className="flex items-center gap-2.5">
                   <span className="font-mono text-[10.5px] tracking-wider tabular-nums text-bp-sec">
                     E:DEN // {stop.drawingNo}
@@ -448,6 +506,7 @@ export function BlueprintPromptSheet({
               </div>
             </div>
           )}
+          </div>
         </div>
       )}
     </aside>

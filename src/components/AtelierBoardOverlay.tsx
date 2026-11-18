@@ -133,7 +133,7 @@ export function AtelierBoardOverlay({
       aria-modal="true"
       aria-labelledby="atelier-board-title"
       onKeyDown={handleDialogKeyDown}
-      className="pointer-events-auto fixed inset-x-2 bottom-2 top-16 z-40 mx-auto flex max-w-[1320px] flex-col rounded-xl border-[3px] border-wood-dark bg-paper-sub p-2 shadow-2xl md:inset-x-8 md:bottom-5 md:top-16 md:p-3 lg:inset-x-14"
+      className="pointer-events-auto fixed inset-x-2 bottom-[max(0.5rem,env(safe-area-inset-bottom))] top-[calc(max(0.55rem,env(safe-area-inset-top))+48px)] z-40 mx-auto flex max-w-[1320px] flex-col rounded-xl border-[3px] border-wood-dark bg-paper-sub p-2 shadow-2xl md:inset-x-8 md:bottom-5 md:top-16 md:p-3 lg:inset-x-14"
     >
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-ink/25 bg-cork text-ink">
         {/* Pinboard Top Bar: Title, Search & Actions */}
@@ -168,7 +168,7 @@ export function AtelierBoardOverlay({
               }}
               placeholder="검색 (법규, MCP, 포항, POETIES...)"
               aria-label="게시판 카드 검색"
-              className="min-h-[44px] min-w-0 flex-1 rounded border border-white/45 bg-white/15 px-3 py-1 font-sans text-xs text-white placeholder:text-white/75 focus:border-[#F2C464] focus:outline-none sm:min-h-[32px] sm:w-64 sm:flex-none"
+              className="min-h-[44px] min-w-0 flex-1 rounded border border-white/45 bg-white/15 px-3 py-1 font-sans text-base text-white placeholder:text-white/75 focus:border-[#F2C464] focus:outline-none sm:min-h-[32px] sm:w-64 sm:flex-none sm:text-xs"
             />
             <button
               ref={closeBtnRef}
@@ -182,7 +182,7 @@ export function AtelierBoardOverlay({
         </div>
 
         {/* Category Filter Tabs */}
-        <div className="flex flex-nowrap gap-2 overflow-x-auto border-b border-ink/15 bg-paper-sub px-3.5 py-2 sm:flex-wrap">
+        <div className="no-scrollbar flex flex-nowrap gap-2 overflow-x-auto border-b border-ink/15 bg-paper-sub px-3.5 py-2 sm:flex-wrap">
           {FILTER_TABS.map((tab) => {
             const active = filter === tab.key;
             return (
@@ -204,7 +204,7 @@ export function AtelierBoardOverlay({
         </div>
 
         {/* Scrollable Corkboard Canvas */}
-        <div data-lenis-prevent className="paper-scroll min-h-0 flex-1 space-y-5 overflow-y-auto p-3.5 sm:p-5">
+        <div data-lenis-prevent className="paper-scroll min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain p-3.5 sm:p-5">
           {/* Compact Banner in ALL view so Station & Portfolio cards lead above the fold */}
           {showCompactOfficeBanner && (
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-ink/25 bg-card px-4 py-2.5 studio-shadow">

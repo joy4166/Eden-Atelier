@@ -59,6 +59,22 @@ body {
   transition: background-color 320ms ease, color 320ms ease;
 }
 
+@media (max-width: 767px) {
+  html,
+  body {
+    overscroll-behavior: none;
+  }
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 .tabular-nums {
   font-variant-numeric: tabular-nums;
 }

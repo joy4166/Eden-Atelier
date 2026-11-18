@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ApprovedStamp, getSheetThudClass } from '@/components/ApprovedStamp';
 import { EDEN_FEATURED_PROJECTS } from '@/data/edenPortfolioData';
 import { copyTextWithFallback } from '@/utils/atelierCopy';
@@ -33,6 +33,11 @@ export function PortfolioCabinetSheet({
   const setMobileGridOpen = onSetMobileGridOpen ?? setInternalGridOpen;
 
   const [stampSeqMap, setStampSeqMap] = useState<Record<string, number>>({});
+  const scrollBodyRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    scrollBodyRef.current?.scrollTo({ top: 0 });
+  }, [selectedProjectIdx]);
 
   const project = EDEN_FEATURED_PROJECTS[selectedProjectIdx] ?? EDEN_FEATURED_PROJECTS[0];
   const stampSeq = stampSeqMap[project.id] ?? 0;
@@ -66,30 +71,30 @@ export function PortfolioCabinetSheet({
         data-dark-surface="true"
         className="flex items-center justify-between gap-2 border-b border-ink/20 bg-[#3B2E24] px-3 py-1 font-mono text-[11px] text-[#FFFDF8] sm:py-1.5"
       >
-        <div className="flex min-w-0 items-center gap-1.5 whitespace-nowrap tabular-nums">
-          <span className="font-bold text-[#F2C464]">STOP 08</span>
-          <span>/ 09</span>
-          <span className="hidden opacity-90 sm:inline">· 3×3 PORTFOLIO CABINET</span>
+        <div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden whitespace-nowrap tabular-nums">
+          <span className="shrink-0 font-bold text-[#F2C464]">STOP 08</span>
+          <span className="shrink-0">/ 09</span>
+          <span className="hidden truncate opacity-90 lg:inline">· 3×3 PORTFOLIO CABINET</span>
         </div>
-        <div className="flex shrink-0 items-center gap-2 sm:gap-1.5">
+        <div className="flex shrink-0 items-center gap-1.5">
           <button
             type="button"
             onClick={onPrev}
-            className="inline-flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center whitespace-nowrap rounded border border-white/50 bg-white/15 px-2.5 py-1 hover:border-[#F2C464] hover:bg-white/25 sm:min-h-[28px] sm:min-w-0"
+            className="inline-flex min-h-[38px] min-w-[40px] shrink-0 items-center justify-center whitespace-nowrap rounded border border-white/50 bg-white/15 px-2 py-1 hover:border-[#F2C464] hover:bg-white/25 sm:min-h-[28px] sm:min-w-0 sm:px-2.5"
           >
             이전
           </button>
           <button
             type="button"
             onClick={onNext}
-            className="inline-flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center whitespace-nowrap rounded border border-white/50 bg-white/15 px-2.5 py-1 hover:border-[#F2C464] hover:bg-white/25 sm:min-h-[28px] sm:min-w-0"
+            className="inline-flex min-h-[38px] min-w-[40px] shrink-0 items-center justify-center whitespace-nowrap rounded border border-white/50 bg-white/15 px-2 py-1 hover:border-[#F2C464] hover:bg-white/25 sm:min-h-[28px] sm:min-w-0 sm:px-2.5"
           >
             다음
           </button>
           <button
             type="button"
             onClick={onCloseToOverview}
-            className="inline-flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center whitespace-nowrap rounded border border-white/50 bg-white/15 px-2.5 py-1 hover:border-[#F2C464] hover:bg-white/25 sm:min-h-[28px] sm:min-w-0"
+            className="inline-flex min-h-[38px] min-w-[40px] shrink-0 items-center justify-center whitespace-nowrap rounded border border-white/50 bg-white/15 px-2 py-1 hover:border-[#F2C464] hover:bg-white/25 sm:min-h-[28px] sm:min-w-0 sm:px-2.5"
           >
             닫기
           </button>
@@ -116,28 +121,30 @@ export function PortfolioCabinetSheet({
 
       {/* Interactive 3x3 Showcase Cubby Selector Synced with 3D Cabinet */}
       <div className="border-b border-ink/15 bg-paper-sub/85 px-3 py-1.5">
-        <div className="flex flex-wrap items-center justify-between gap-2 font-mono text-[10.5px] font-bold text-ink-sec">
-          <div className="flex items-center gap-2.5">
-            <span className="hidden sm:inline">3×3 장식장 진열 칸 선택 (클릭 시 3D 클로즈업)</span>
+        <div className="flex flex-wrap items-center justify-between gap-1.5 font-mono text-[10.5px] font-bold text-ink-sec">
+          <div className="flex items-center gap-2">
+            <span className="hidden sm:inline [@media(max-height:500px)]:hidden">
+              3×3 장식장 진열 칸 선택 (클릭 시 3D 클로즈업)
+            </span>
             <span className="inline-flex items-center gap-1 text-[10px] text-brass">
               <span aria-hidden="true" className="h-2 w-2 rounded-full bg-brass" />
               수상작
             </span>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             <button
               type="button"
               onClick={() => setMobileGridOpen(!mobileGridOpen)}
               aria-expanded={mobileGridOpen}
-              className="inline-flex min-h-[44px] shrink-0 items-center rounded-full border border-ink/50 bg-card px-3 py-0.5 font-mono text-[11px] font-bold text-ink sm:hidden"
+              className="inline-flex min-h-[38px] shrink-0 items-center whitespace-nowrap rounded-full border border-ink/50 bg-card px-2.5 py-0.5 font-mono text-[11px] font-bold text-ink sm:hidden [@media(max-height:500px)]:inline-flex [@media(max-height:500px)]:min-h-[28px]"
             >
               {mobileGridOpen ? '목록 닫기 ▴' : '다른 작품 9선 ▾'}
             </button>
             <button
               type="button"
               onClick={() => onSetCabinetZoomed(!cabinetZoomed)}
-              className={`inline-flex min-h-[44px] shrink-0 items-center whitespace-nowrap rounded-full border px-3 py-0.5 font-mono text-[11px] font-bold transition-colors sm:min-h-[26px] sm:px-2.5 sm:text-[10px] ${
+              className={`inline-flex min-h-[38px] shrink-0 items-center whitespace-nowrap rounded-full border px-2.5 py-0.5 font-mono text-[11px] font-bold transition-colors sm:min-h-[26px] sm:px-2.5 sm:text-[10px] ${
                 cabinetZoomed
                   ? 'border-ink bg-[#F2C464] text-[#221C17] hover:bg-[#f6d37b]'
                   : 'border-brass/60 bg-card text-brass hover:border-ink hover:text-ink'
@@ -150,8 +157,10 @@ export function PortfolioCabinetSheet({
 
         <div
           className={`${
-            mobileGridOpen ? 'mt-1.5 grid' : 'hidden sm:mt-1.5 sm:grid'
-          } grid-cols-2 gap-1.5 sm:grid-cols-3 sm:gap-1`}
+            mobileGridOpen
+              ? 'no-scrollbar mt-1.5 grid max-h-[164px] overflow-y-auto pr-0.5 [@media(max-height:500px)]:max-h-[112px]'
+              : 'hidden sm:mt-1.5 sm:grid [@media(max-height:500px)]:hidden'
+          } grid-cols-2 gap-1 sm:grid-cols-3`}
         >
           {EDEN_FEATURED_PROJECTS.map((item, idx) => {
             const active = idx === selectedProjectIdx;
@@ -169,7 +178,7 @@ export function PortfolioCabinetSheet({
                   setMobileGridOpen(false);
                 }}
                 aria-pressed={active}
-                className={`flex min-h-[44px] items-center justify-between gap-1 rounded border px-2 py-1 text-left transition-colors sm:min-h-[28px] ${
+                className={`flex min-h-[40px] items-center justify-between gap-1 rounded border px-2 py-1 text-left transition-colors sm:min-h-[28px] ${
                   active
                     ? 'border-ink bg-accent text-accent-ink'
                     : 'border-ink/40 bg-paper text-ink hover:border-brass'
@@ -203,8 +212,9 @@ export function PortfolioCabinetSheet({
 
       {/* Selected Work Archival Summary & Verified Spec Grid */}
       <div
+        ref={scrollBodyRef}
         data-lenis-prevent
-        className="paper-scroll min-h-0 flex-1 space-y-2 overflow-y-auto px-3.5 py-2 sm:px-4"
+        className="paper-scroll min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain px-3.5 py-2 sm:px-4"
       >
         <div className="rounded-lg border border-ink/20 bg-paper-sub/70 p-2.5">
           <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-ink-sec">

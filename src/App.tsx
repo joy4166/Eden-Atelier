@@ -58,6 +58,7 @@ export default function App() {
   const [activeStop, setActiveStop] = useState<StopId>('overview');
   const [selectedProjectIdx, setSelectedProjectIdx] = useState(0);
   const [cabinetZoomed, setCabinetZoomed] = useState(false);
+  const [mobileSheetCollapsed, setMobileSheetCollapsed] = useState(false);
   const [hoveredStop, setHoveredStop] = useState<StopId | null>(null);
   const [hoveredLamp, setHoveredLamp] = useState(false);
   const [lighting, setLighting] = useState<LightingMode>('day');
@@ -72,6 +73,12 @@ export default function App() {
     }
     setActiveStop(id);
     engineRef.current?.setStop(id);
+    if (window.innerWidth < 768) {
+      window.setTimeout(() => {
+        if (programmaticStopRef.current === id) programmaticStopRef.current = null;
+      }, 150);
+      return;
+    }
     const maxScroll = Math.max(document.documentElement.scrollHeight - window.innerHeight, 1);
     const destY = Math.round(STOP_SCROLL_TARGET[id] * maxScroll);
     if (lenisRef.current) {
@@ -134,6 +141,14 @@ export default function App() {
       setCabinetZoomed(false);
     }
   }, [activeStop]);
+
+  useEffect(() => {
+    setMobileSheetCollapsed(false);
+  }, [activeStop, selectedProjectIdx]);
+
+  useEffect(() => {
+    engineRef.current?.setMobileSheetCollapsed(mobileSheetCollapsed);
+  }, [mobileSheetCollapsed]);
 
   useEffect(() => {
     const container = mountRef.current;
@@ -227,6 +242,7 @@ export default function App() {
   useEffect(() => {
     const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const updateFromScroll = (scrollY: number) => {
+      if (window.innerWidth < 768) return;
       const maxScroll = Math.max(document.documentElement.scrollHeight - window.innerHeight, 1);
       const progress = Math.max(0, Math.min(1, scrollY / maxScroll));
       const next = resolveStopFromScroll(progress);
@@ -323,9 +339,9 @@ export default function App() {
           : introState.label}
       </div>
 
-      {/* 940vh Scroll Track driving Complete 1-Room Tour (00..09) */}
-      <div className="relative h-[940vh] w-full">
-        <div className="sticky top-0 h-screen w-full overflow-hidden">
+      {/* Mobile: 100dvh fixed interactive viewport · Desktop (md+): 940vh Scroll-Tour Track */}
+      <div className="relative h-[100dvh] w-full overflow-hidden md:h-[940vh] md:overflow-visible">
+        <div className="sticky top-0 h-[100dvh] w-full overflow-hidden">
           <TopStudioBar
             activeStop={activeStop}
             lighting={lighting}
@@ -338,11 +354,7 @@ export default function App() {
           />
 
           {/* 3D Canvas Viewport */}
-          <div
-            className={`relative w-full transition-[height] duration-300 ${
-              activeStop === 'overview' || activeStop === 'board' ? 'h-full' : 'h-[45vh] md:h-full'
-            }`}
-          >
+          <div className="relative h-full w-full">
             {webglFallback ? (
               <div className="flex h-full w-full items-center justify-center bg-canvas p-8">
                 <div className="max-w-md rounded-xl border border-ink/35 bg-card p-6 text-center studio-shadow">
@@ -363,7 +375,7 @@ export default function App() {
               <div
                 ref={mountRef}
                 aria-label="이든 디지털 아틀리에 3D 미니어처 단지"
-                className={`h-full w-full touch-pan-y select-none ${
+                className={`h-full w-full touch-none select-none md:touch-pan-y ${
                   hoveredStop || hoveredLamp ? 'cursor-pointer' : 'cursor-grab active:cursor-grabbing'
                 }`}
               />
@@ -426,6 +438,8 @@ export default function App() {
             open={introState.done && activeStop !== 'overview' && activeStop !== 'board'}
             selectedProjectIdx={selectedProjectIdx}
             cabinetZoomed={cabinetZoomed}
+            mobileCollapsed={mobileSheetCollapsed}
+            onToggleMobileCollapsed={() => setMobileSheetCollapsed((c) => !c)}
             onSelectProjectIdx={setSelectedProjectIdx}
             onSetCabinetZoomed={setCabinetZoomed}
             onPrev={() => handleStep(-1)}

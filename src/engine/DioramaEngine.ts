@@ -158,6 +158,8 @@ export class DioramaEngine {
   private cabinetZoomed = false;
   private selectedCubbyIdx = 0;
   private reducedMotion = false;
+  private zoomScale = 1.0;
+  private mobileSheetCollapsed = false;
   private clearHoverFn: (() => void) | null = null;
 
   constructor(
@@ -203,7 +205,8 @@ export class DioramaEngine {
 
     const w = Math.max(this.container.clientWidth, 320);
     const h = Math.max(this.container.clientHeight, 320);
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const isMobileInit = w < 768;
+    const dpr = Math.min(window.devicePixelRatio || 1, isMobileInit ? 1.75 : 2);
 
     this.renderer = new THREE.WebGLRenderer({
       antialias: true,
@@ -246,7 +249,7 @@ export class DioramaEngine {
     const sunLight = new THREE.DirectionalLight(0xfff0d4, 1.55);
     sunLight.position.set(16, 26, 18);
     sunLight.castShadow = true;
-    sunLight.shadow.mapSize.set(2048, 2048);
+    sunLight.shadow.mapSize.set(isMobileInit ? 1024 : 2048, isMobileInit ? 1024 : 2048);
     sunLight.shadow.camera.left = -32;
     sunLight.shadow.camera.right = 34;
     sunLight.shadow.camera.top = 28;
@@ -293,12 +296,16 @@ export class DioramaEngine {
 
     this.inkDof = new InkDofPass(w, h, dpr, this.renderer.capabilities.isWebGL2);
 
-    // Drag Orbit + Stop / Cubby / Desk Lamp Click Raycasting
+    // Drag Orbit + Multi-Touch Pinch-to-Zoom + Stop / Cubby / Desk Lamp Click Raycasting
     const raycaster = new THREE.Raycaster();
     const pointer = new THREE.Vector2();
+    const activePointers = new Map<number, { x: number; y: number }>();
     let dragging = false;
     let dragDist = 0;
     let lastPtr = { x: 0, y: 0 };
+    let pinchStartDist = 0;
+    let pinchStartZoom = 1;
+    let pinchMoved = false;
     let currentHovered: StopId | null = null;
     let currentHoveredLamp = false;
 
@@ -339,14 +346,39 @@ export class DioramaEngine {
     };
     this.clearHoverFn = clearHoverState;
 
+    const getPinchDistance = (): number => {
+      const pts = Array.from(activePointers.values());
+      if (pts.length < 2) return 0;
+      return Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
+    };
+
     const onPointerDown = (e: PointerEvent) => {
-      dragging = true;
-      dragDist = 0;
-      lastPtr = { x: e.clientX, y: e.clientY };
+      activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (activePointers.size === 1) {
+        dragging = true;
+        dragDist = 0;
+        pinchMoved = false;
+        lastPtr = { x: e.clientX, y: e.clientY };
+      } else if (activePointers.size >= 2) {
+        dragging = false;
+        pinchMoved = true;
+        pinchStartDist = Math.max(getPinchDistance(), 20);
+        pinchStartZoom = this.zoomScale;
+      }
     };
 
     const onPointerMove = (e: PointerEvent) => {
-      if (dragging) {
+      if (activePointers.has(e.pointerId)) {
+        activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      }
+      if (activePointers.size >= 2) {
+        const curDist = getPinchDistance();
+        if (pinchStartDist > 0 && curDist > 0) {
+          this.zoomScale = THREE.MathUtils.clamp(pinchStartZoom * (pinchStartDist / curDist), 0.68, 1.45);
+        }
+        return;
+      }
+      if (dragging && activePointers.size === 1) {
         const dx = e.clientX - lastPtr.x;
         const dy = e.clientY - lastPtr.y;
         dragDist += Math.hypot(dx, dy);
@@ -355,7 +387,7 @@ export class DioramaEngine {
         lastPtr = { x: e.clientX, y: e.clientY };
         return;
       }
-      if (!this.introDone || this.activeStop === 'board' || e.target !== domEl) {
+      if (e.pointerType === 'touch' || !this.introDone || this.activeStop === 'board' || e.target !== domEl) {
         clearHoverState();
         return;
       }
@@ -371,13 +403,19 @@ export class DioramaEngine {
     };
 
     const onPointerUp = (e: PointerEvent) => {
-      if (
+      const tapThreshold = e.pointerType === 'touch' ? 10 : 6;
+      const shouldTap =
         dragging &&
-        dragDist < 6 &&
+        !pinchMoved &&
+        activePointers.size === 1 &&
+        dragDist < tapThreshold &&
         this.introDone &&
         this.activeStop !== 'board' &&
-        e.target === domEl
-      ) {
+        e.target === domEl;
+
+      activePointers.delete(e.pointerId);
+
+      if (shouldTap) {
         const hit = getHitTarget(e.clientX, e.clientY);
         if (hit.isLamp) {
           this.callbacks.onToggleLighting?.();
@@ -390,19 +428,47 @@ export class DioramaEngine {
           }
         }
       }
-      dragging = false;
+
+      if (activePointers.size === 1) {
+        const remaining = activePointers.values().next().value;
+        if (remaining) {
+          lastPtr = { x: remaining.x, y: remaining.y };
+        }
+        dragging = true;
+        pinchStartDist = 0;
+      } else if (activePointers.size === 0) {
+        dragging = false;
+        pinchStartDist = 0;
+      }
+    };
+
+    const onPointerCancel = (e: PointerEvent) => {
+      activePointers.delete(e.pointerId);
+      if (activePointers.size === 1) {
+        const remaining = activePointers.values().next().value;
+        if (remaining) lastPtr = { x: remaining.x, y: remaining.y };
+        dragging = true;
+      } else if (activePointers.size === 0) {
+        dragging = false;
+        pinchStartDist = 0;
+      }
     };
 
     domEl.addEventListener('pointerdown', onPointerDown);
     domEl.addEventListener('pointerleave', clearHoverState);
     window.addEventListener('pointermove', onPointerMove);
     window.addEventListener('pointerup', onPointerUp);
+    window.addEventListener('pointercancel', onPointerCancel);
 
+    let lastSizeW = w;
+    let lastSizeH = h;
     const onResize = () => {
       if (this.destroyed) return;
       const rw = Math.max(this.container.clientWidth, 320);
       const rh = Math.max(this.container.clientHeight, 320);
-      const rdpr = Math.min(window.devicePixelRatio || 1, 2);
+      lastSizeW = rw;
+      lastSizeH = rh;
+      const rdpr = Math.min(window.devicePixelRatio || 1, rw < 768 ? 1.75 : 2);
       const rAspect = rw / rh;
       this.camera.aspect = rAspect;
       this.camera.fov = rAspect < 0.85 ? 44 + (0.85 - Math.max(0.42, rAspect)) * 82 : 44;
@@ -416,6 +482,18 @@ export class DioramaEngine {
       this.inkDof.setSize(rw, rh, rdpr);
     };
     window.addEventListener('resize', onResize);
+    const resizeObserver =
+      typeof ResizeObserver !== 'undefined'
+        ? new ResizeObserver(() => {
+            if (this.destroyed) return;
+            const cw = Math.max(this.container.clientWidth, 320);
+            const ch = Math.max(this.container.clientHeight, 320);
+            if (Math.abs(cw - lastSizeW) >= 1 || Math.abs(ch - lastSizeH) >= 1) {
+              onResize();
+            }
+          })
+        : null;
+    resizeObserver?.observe(this.container);
 
     this.introStartTime = performance.now();
     const clock = new THREE.Clock();
@@ -575,8 +653,11 @@ export class DioramaEngine {
 
       // 3. Responsive Camera Framing & Parabolic Crane Flight
       this.flightT = Math.min(1, this.flightT + dt * 1.45);
-      const isDesktop = this.container.clientWidth >= 768;
-      const isMobileNarrow = this.container.clientWidth < 640;
+      const cwNow = Math.max(this.container.clientWidth, 320);
+      const chNow = Math.max(this.container.clientHeight, 320);
+      const isDesktop = cwNow >= 768;
+      const isPortrait = cwNow / chNow < 0.85;
+      const isMobileNarrow = cwNow < 640;
 
       const cfg = CAMERA_CONFIGS[this.activeStop];
       const cabPose =
@@ -590,20 +671,33 @@ export class DioramaEngine {
         this.activeStop === 'cabinet' ? (this.cabinetZoomed ? 3.2 : 11.5) : cfg.focusRange;
       const activeMaxBlur =
         this.activeStop === 'cabinet' ? (this.cabinetZoomed ? 4.2 : 2.2) : cfg.maxBlur;
+      const isShortLandscape = cwNow >= 640 && chNow < 500;
 
-      if (this.activeStop === 'overview' && isMobileNarrow) {
-        basePos.multiplyScalar(1.32);
-      } else if (this.activeStop === 'cabinet' && !this.cabinetZoomed && isMobileNarrow) {
-        baseLook.y -= 0.4;
-        const pullBack = basePos.clone().sub(baseLook).multiplyScalar(1.16);
+      if (this.activeStop === 'overview' && isPortrait) {
+        baseLook.set(8.5, 2.3, -4.4);
+        const pullBack = basePos.clone().sub(baseLook).multiplyScalar(1.52);
         basePos.copy(baseLook).add(pullBack);
-      } else if (this.activeStop !== 'overview' && isMobileNarrow) {
-        baseLook.y += 0.18;
-        const pullBack = basePos.clone().sub(baseLook).multiplyScalar(1.02);
+      } else if (this.activeStop === 'cabinet' && isPortrait) {
+        if (!this.cabinetZoomed) {
+          baseLook.y -= 0.7;
+          const pullBack = basePos.clone().sub(baseLook).multiplyScalar(1.24);
+          basePos.copy(baseLook).add(pullBack);
+        } else {
+          const pullBack = basePos.clone().sub(baseLook).multiplyScalar(1.16);
+          basePos.copy(baseLook).add(pullBack);
+        }
+      } else if (this.activeStop === 'cabinet' && isShortLandscape && !this.cabinetZoomed) {
+        baseLook.y -= 0.6;
+        const pullBack = basePos.clone().sub(baseLook).multiplyScalar(1.26);
+        basePos.copy(baseLook).add(pullBack);
+      } else if (this.activeStop !== 'overview' && this.activeStop !== 'board' && isPortrait) {
+        baseLook.y += 0.22;
+        const scaleBack = this.activeStop === 'bookstand' ? 1.24 : 1.28;
+        const pullBack = basePos.clone().sub(baseLook).multiplyScalar(scaleBack);
         basePos.copy(baseLook).add(pullBack);
       }
 
-      const arm = basePos.clone().sub(baseLook);
+      const arm = basePos.clone().sub(baseLook).multiplyScalar(this.zoomScale);
       const spherical = new THREE.Spherical().setFromVector3(arm);
       const idleDrift =
         !this.reducedMotion && this.introDone && this.activeStop === 'overview'
@@ -662,7 +756,7 @@ export class DioramaEngine {
       // True Optical Frustum Shift: left-half centering on desktop, top-half centering on mobile (Stops 01..08)
       const hasSideSheet = this.activeStop !== 'overview' && this.activeStop !== 'board';
       const desiredOffsetX = isDesktop && hasSideSheet ? 0.225 : 0;
-      const desiredOffsetY = !isDesktop && hasSideSheet ? 0.19 : 0;
+      const desiredOffsetY = !isDesktop && hasSideSheet && !this.mobileSheetCollapsed ? 0.175 : 0;
       this.viewOffsetRatio += (desiredOffsetX - this.viewOffsetRatio) * dampCam;
       this.viewOffsetYRatio += (desiredOffsetY - this.viewOffsetYRatio) * dampCam;
       if (
@@ -714,7 +808,9 @@ export class DioramaEngine {
       domEl.removeEventListener('pointerleave', clearHoverState);
       window.removeEventListener('pointermove', onPointerMove);
       window.removeEventListener('pointerup', onPointerUp);
+      window.removeEventListener('pointercancel', onPointerCancel);
       window.removeEventListener('resize', onResize);
+      resizeObserver?.disconnect();
       studioCtx.dispose();
     };
 
@@ -728,6 +824,7 @@ export class DioramaEngine {
       this.clearHoverFn?.();
     }
     this.flightT = 0;
+    this.zoomScale = 1.0;
     this.orbitOffset.az *= 0.25;
     this.orbitOffset.po *= 0.25;
   }
@@ -736,8 +833,13 @@ export class DioramaEngine {
     this.ensureIntroCompleteForNavigation();
     this.activeStop = 'overview';
     this.flightT = 0;
+    this.zoomScale = 1.0;
     this.orbitOffset.az = 0;
     this.orbitOffset.po = 0;
+  }
+
+  public setMobileSheetCollapsed(collapsed: boolean): void {
+    this.mobileSheetCollapsed = collapsed;
   }
 
   public setLighting(mode: LightingMode): void {
